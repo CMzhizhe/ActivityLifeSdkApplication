@@ -1,0 +1,4 @@
+
+rootProject.name = "LifeNoticeApplication"
+include ':app'
+include ':activitylifelibrary'
