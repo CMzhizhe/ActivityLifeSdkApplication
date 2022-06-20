@@ -1,4 +1,4 @@
-package com.gxx.lifenoticeapplication.utils;
+package com.gxx.activitylifelibrary.util;
 
 import android.app.ActivityManager;
 import android.app.Application;
@@ -23,7 +23,7 @@ import static android.content.Context.ACTIVITY_SERVICE;
  * @date :2019/10/10 0010
  * @description:放一些不知道如何归类的工具类
  **/
-public class MLUtils {
+public class ProcessUtils {
 
     /**
      * 判断应用是否已经启动

@@ -19,11 +19,9 @@ class ActivityLifeService : Service() {
 
         const val BUNDLE_MODEL = "model"
     }
-    private var mActivityCount = 1;
     private var mMainMessenger: Messenger? = null;
     private val mMessenger = Messenger(object : Handler() {
         override fun handleMessage(msg: Message) {
-            LogUtil.d("msg.what=" + "${msg.what}")
             if (msg.what == WHAT_MAIN_INIT && msg.replyTo != null) {
                 mMainMessenger = msg.replyTo;
             } else if (mMainMessenger != null && msg.what == WHAT_STATE_LIFE) {
@@ -31,17 +29,12 @@ class ActivityLifeService : Service() {
                     LogUtil.d("msg.data为null")
                     return
                 }
-                val model = msg.data.getSerializable(BUNDLE_MODEL) as LifeModel
-                if (ActivityLifeCallbackSdk.LIST_LIFE_NAME[ model.position].equals(NAME_ON_CREATE)){
-                    mActivityCount = mActivityCount + 1;
-                }else if (ActivityLifeCallbackSdk.LIST_LIFE_NAME[ model.position].equals(NAME_ON_STOPPED)){
-                    mActivityCount = mActivityCount - 1;
-                }
-                model.count = mActivityCount
                 if (ActivityLifeCallbackSdk.mIsDebug){
-                    LogUtil.d("name = " + ActivityLifeCallbackSdk.LIST_LIFE_NAME[ model.position])
-                    LogUtil.d("processName = " + model.processName)
-                    LogUtil.d("count = " + model.count)
+                    val model = msg.data.getSerializable(BUNDLE_MODEL) as LifeModel
+                    LogUtil.d("生命周期名称 = " + ActivityLifeCallbackSdk.LIST_LIFE_NAME[ model.position])
+                    LogUtil.d("进程名称 = " + model.processName)
+                    LogUtil.d("Activity个数 = " + model.count)
+                    LogUtil.d("==========================")
                 }
                 val message = Message.obtain(null, WHAT_STATE_LIFE)
                 message.data = msg.data

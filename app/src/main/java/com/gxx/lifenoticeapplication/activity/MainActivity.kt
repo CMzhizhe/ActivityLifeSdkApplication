@@ -3,7 +3,6 @@ package com.gxx.lifenoticeapplication.activity
 import android.content.Intent
 import android.os.Bundle
 import com.gxx.lifenoticeapplication.activity.base.BaseActivity
-import com.gxx.lifenoticeapplication.utils.MLUtils
 
 class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

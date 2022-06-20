@@ -6,7 +6,7 @@ import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.gxx.lifenoticeapplication.R
-import com.gxx.lifenoticeapplication.utils.MLUtils
+import com.gxx.activitylifelibrary.util.ProcessUtils
 
 abstract class BaseActivity : AppCompatActivity(){
     lateinit var tvProcessName:TextView
@@ -14,7 +14,7 @@ abstract class BaseActivity : AppCompatActivity(){
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         tvProcessName = this.findViewById(R.id.tv_process_name);
-        tvProcessName.setText("进程名=" + MLUtils.getProcessName(this))
+        tvProcessName.setText("进程名=" + ProcessUtils.getProcessName(this))
         tvProcessName.setOnClickListener(object :View.OnClickListener{
             override fun onClick(v: View?) {
                  tvClick()
