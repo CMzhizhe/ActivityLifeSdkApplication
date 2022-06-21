@@ -4,13 +4,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activity.MainActivity">
+    tools:context=".activity.mainprocess.MainActivity">
 
     <TextView
         android:id="@+id/tv_process_name"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:text="可以点击我哦"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

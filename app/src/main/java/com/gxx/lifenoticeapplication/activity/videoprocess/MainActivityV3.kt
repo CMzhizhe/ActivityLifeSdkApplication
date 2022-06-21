@@ -1,4 +1,4 @@
-package com.gxx.lifenoticeapplication.activity
+package com.gxx.lifenoticeapplication.activity.videoprocess
 
 import android.os.Bundle
 import com.gxx.lifenoticeapplication.activity.base.BaseActivity
@@ -6,9 +6,8 @@ import com.gxx.lifenoticeapplication.activity.base.BaseActivity
 class MainActivityV3: BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        tvProcessName.setText("你好，我是video进程\n")
     }
 
-    override fun tvClick() {
-       tvProcessName.setText("我是最后一个多进程啦")
-    }
+
 }

@@ -34,7 +34,6 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
     private var mApplication: Application? = null
     private var mActivityCount = 0//activity 个数
     private var mPosition = 0//当前在哪个生命周期
-    private val mListProcessName = mutableListOf<String>()//所有的进程名称
     var mIsDebug = false;
 
     const val NAME_ON_CREATE = "onActivityCreated"
@@ -92,26 +91,13 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
                     return
                 }
 
-                var isNeedAdd = true;
-                for (processName in mListProcessName) {
-                    if (processName.equals(mProcessName)) {
-                        isNeedAdd = false
-                        break
-                    }
-                }
-
-                if (isNeedAdd) {
-                    mListProcessName.add(model.processName)
-                }
-
-
-                if (mProcessName.equals(model.processName)){
-                    if (model.count <= 0) {
-                        val isForeground = isRunningForeground(mApplication!!.baseContext)
-                        mOnLifeCallBackListener?.onAppForeground(isForeground, model.processName, LIST_LIFE_NAME[model.position])
-                    } else {
-                        mOnLifeCallBackListener?.onAppForeground(true, model.processName, LIST_LIFE_NAME[model.position])
-                    }
+                if (model.isCheckForeground){
+                    val isForeground = isRunningForeground(mApplication!!.baseContext,model.processName)
+                    mOnLifeCallBackListener?.onAppForeground(
+                        isForeground,
+                        model.processName,
+                        LIST_LIFE_NAME[model.position]
+                    )
                 }
 
             }
@@ -121,10 +107,11 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
             mServiceMessenger = Messenger(p1)
-            sendMessageToService(if (mIsMainProcess) WHAT_MAIN_INIT else WHAT_STATE_LIFE, mPosition, mActivityCount);
+            sendMessageToService(if (mIsMainProcess) WHAT_MAIN_INIT else WHAT_STATE_LIFE, mPosition,true);
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {
+            Log.e(TAG,"断开链接 = " + p0?.packageName)
             mServiceMessenger = null
         }
     }
@@ -135,7 +122,7 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
      * @param position 从LIST_LIFE_NAME取下标
      * @param activityCount activity 个数
      */
-    fun sendMessageToService(what: Int, position: Int, activityCount: Int) {
+    fun sendMessageToService(what: Int, position: Int, isCheckForeground: Boolean) {
         this.mPosition = position
         if (mServiceMessenger == null) {
             Log.d(TAG, "serviceMessenger 还未初始化")
@@ -145,53 +132,52 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
         //replyTo参数包含客户端Messenger
         message.replyTo = mReceiveMessenger
         message.what = what
-        if (position >= 0) {
-            val model = LifeModel()
-            model.position = position
-            model.processName = mProcessName
-            model.count = activityCount
-            val bundle = Bundle()
-            bundle.putSerializable(BUNDLE_MODEL, model)
-            message.data = bundle
-        }
+        val model = LifeModel()
+        model.position = position
+        model.processName = mProcessName
+        model.isCheckForeground = isCheckForeground
+        val bundle = Bundle()
+        bundle.putSerializable(BUNDLE_MODEL, model)
+        message.data = bundle
         mServiceMessenger?.send(message)
     }
 
     override fun onActivityCreated(p0: Activity, p1: Bundle?) {
         mOnLifeCallBackListener?.onActivityCreated(p0, p1)
-        sendMessageToService(WHAT_STATE_LIFE, 0, mActivityCount)
+        sendMessageToService(WHAT_STATE_LIFE, 0, false)
     }
 
     override fun onActivityStarted(p0: Activity) {
-        this.mActivityCount += 1
         mOnLifeCallBackListener?.onActivityStarted(p0)
-        sendMessageToService(WHAT_STATE_LIFE, 1, mActivityCount)
+        sendMessageToService(WHAT_STATE_LIFE, 1, false)
     }
 
     override fun onActivityResumed(p0: Activity) {
+        mActivityCount = mActivityCount + 1
         mOnLifeCallBackListener?.onActivityResumed(p0)
-        sendMessageToService(WHAT_STATE_LIFE, 2, mActivityCount)
+        sendMessageToService(WHAT_STATE_LIFE, 2, true)
     }
 
     override fun onActivityPaused(p0: Activity) {
         mOnLifeCallBackListener?.onActivityPaused(p0)
-        sendMessageToService(WHAT_STATE_LIFE, 3, mActivityCount)
+        sendMessageToService(WHAT_STATE_LIFE, 3,  false)
     }
 
     override fun onActivityStopped(p0: Activity) {
-        this.mActivityCount -= 1
+        mActivityCount = mActivityCount - 1
         mOnLifeCallBackListener?.onActivityStopped(p0)
-        sendMessageToService(WHAT_STATE_LIFE, 4, mActivityCount)
+        sendMessageToService(WHAT_STATE_LIFE, 4, if (mActivityCount <= 0) true else false)
+
     }
 
     override fun onActivitySaveInstanceState(p0: Activity, p1: Bundle) {
         mOnLifeCallBackListener?.onActivitySaveInstanceState(p0, p1)
-       // sendMessageToService(WHAT_STATE_LIFE, 5, mActivityCount)
+        sendMessageToService(WHAT_STATE_LIFE, 5,false)
     }
 
     override fun onActivityDestroyed(p0: Activity) {
         mOnLifeCallBackListener?.onActivityDestroyed(p0)
-        sendMessageToService(WHAT_STATE_LIFE, 6, mActivityCount)
+        sendMessageToService(WHAT_STATE_LIFE, 6,false)
     }
 
     /**
@@ -200,12 +186,13 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
      * @description 检查是否在前台
      * return true前台
      **/
-    fun isRunningForeground(context: Context): Boolean {
-        val activityManager = context.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    fun isRunningForeground(context: Context,processName:String): Boolean {
+        val activityManager =
+            context.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val appProcesses = activityManager.runningAppProcesses ?: return false
         for (appProcess in appProcesses) {
-            for (processName in mListProcessName) {
-                if (appProcess.processName.equals(processName) && appProcess.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+            if (appProcess.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                if (appProcess.processName.equals(processName)) {
                     return true
                 }
             }

@@ -15,7 +15,7 @@
         android:theme="@style/Theme.LifeNoticeApplication"
         tools:targetApi="31">
         <activity
-            android:name=".activity.MainActivity"
+            android:name=".activity.mainprocess.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -23,8 +23,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activity.MainActivityV2" android:process=":gxx"/>
-        <activity android:name=".activity.MainActivityV3" android:process=":video"/>
+        <activity android:name=".activity.mainprocess.LoginActivity"/>
+        <activity android:name=".activity.gxxprocess.RegisterActivity" android:process=":gxx"/>
+        <activity android:name=".activity.gxxprocess.MainActivityV2" android:process=":gxx"/>
+        <activity android:name=".activity.videoprocess.MainActivityV3" android:process=":video"/>
     </application>
 
 </manifest>
