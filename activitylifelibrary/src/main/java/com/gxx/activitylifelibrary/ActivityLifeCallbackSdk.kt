@@ -92,12 +92,20 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
                 }
 
                 if (model.isCheckForeground){
-                    val isForeground = isRunningForeground(mApplication!!.baseContext,model.processName)
-                    mOnLifeCallBackListener?.onAppForeground(
-                        isForeground,
-                        model.processName,
-                        LIST_LIFE_NAME[model.position]
-                    )
+                    if (LIST_LIFE_NAME[model.position].equals(NAME_ON_RESUMED)){
+                        mOnLifeCallBackListener?.onAppForeground(
+                            true,
+                            model.processName,
+                            LIST_LIFE_NAME[model.position]
+                        )
+                    }else{
+                        val isForeground = isRunningForeground(mApplication!!.baseContext,model.processName)
+                        mOnLifeCallBackListener?.onAppForeground(
+                            isForeground,
+                            model.processName,
+                            LIST_LIFE_NAME[model.position]
+                        )
+                    }
                 }
 
             }
