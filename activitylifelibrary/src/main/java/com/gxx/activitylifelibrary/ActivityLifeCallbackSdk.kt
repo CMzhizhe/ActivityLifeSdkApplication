@@ -12,6 +12,7 @@ import android.content.ServiceConnection
 import android.os.*
 import android.util.Log
 import com.gxx.activitylifelibrary.inter.OnLifeCallBackListener
+import com.gxx.activitylifelibrary.inter.OnLifeServiceLifeListener
 import com.gxx.activitylifelibrary.model.LifeModel
 import com.gxx.activitylifelibrary.service.ActivityLifeService
 import com.gxx.activitylifelibrary.service.ActivityLifeService.Companion.BUNDLE_MODEL
@@ -29,6 +30,7 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
     const val TAG = "LifeCall"
 
     private var mOnLifeCallBackListener: OnLifeCallBackListener? = null
+    private var mOnLifeServiceLifeListener: OnLifeServiceLifeListener? = null;
     private var mIsMainProcess: Boolean = false//默认不是主进程
     private var mProcessName: String = ""
     private var mApplication: Application? = null
@@ -62,13 +64,22 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
         isDebug: Boolean,
         application: Application,
         onLifeCallBackListener: OnLifeCallBackListener
-    ) {
+    ){
         application.registerActivityLifecycleCallbacks(this)
         this.mIsDebug = isDebug
         this.mApplication = application
         this.mProcessName = ProcessUtils.getProcessName(application.baseContext)//当前进程名称
         this.mIsMainProcess = mProcessName.equals(application.packageName)//当前是否为主进程
         this.mOnLifeCallBackListener = onLifeCallBackListener//接口回调
+    }
+
+    /**
+     * @date 创建时间: 2022/6/22
+     * @auther gaoxiaoxiong
+     * @description 启动服务
+     **/
+    fun bindService(application: Application, onLifeServiceLifeListener:OnLifeServiceLifeListener){
+        this.mOnLifeServiceLifeListener = onLifeServiceLifeListener
         application.bindService(
             Intent(application, ActivityLifeService::class.java), serviceConnection,
             Service.BIND_AUTO_CREATE
@@ -91,20 +102,34 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
                     return
                 }
 
-                if (model.isCheckForeground){
-                    if (LIST_LIFE_NAME[model.position].equals(NAME_ON_RESUMED)){
-                        mOnLifeCallBackListener?.onAppForeground(
+                if (model.isCheckForeground) {
+                    if (LIST_LIFE_NAME[model.position].equals(NAME_ON_RESUMED)) {
+                        mOnLifeCallBackListener?.onProcessForeground(
                             true,
-                            model.processName,
-                            LIST_LIFE_NAME[model.position]
+                            model.processName, true
                         )
-                    }else{
-                        val isForeground = isRunningForeground(mApplication!!.baseContext,model.processName)
-                        mOnLifeCallBackListener?.onAppForeground(
+                        mOnLifeCallBackListener?.onAppForeground(true)
+                    } else {
+                        val isForeground = isRunningForeground(mApplication!!.baseContext, model.processName)
+                        mOnLifeCallBackListener?.onProcessForeground(
                             isForeground,
-                            model.processName,
-                            LIST_LIFE_NAME[model.position]
+                            model.processName, true
                         )
+                        if (!isForeground) {
+                            val foregroundName = getForegroundName(mApplication!!)
+                            if (foregroundName == null){
+                                mOnLifeCallBackListener?.onAppForeground(false)
+                            }else {
+                                val listName = foregroundName.split(":")
+                                if (listName.isEmpty()){
+                                    mOnLifeCallBackListener?.onAppForeground(false)
+                                }else{
+                                    if (listName[0].equals(mProcessName)){
+                                        mOnLifeCallBackListener?.onAppForeground(true)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -115,12 +140,14 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
             mServiceMessenger = Messenger(p1)
-            sendMessageToService(if (mIsMainProcess) WHAT_MAIN_INIT else WHAT_STATE_LIFE, mPosition,true);
+            sendMessageToService(if (mIsMainProcess) WHAT_MAIN_INIT else WHAT_STATE_LIFE, mPosition, true);
+            mOnLifeServiceLifeListener?.onBindServiceSuccess()
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {
-            Log.e(TAG,"断开链接 = " + p0?.packageName)
+            Log.e(TAG, "断开链接 = " + p0?.packageName)
             mServiceMessenger = null
+            mOnLifeServiceLifeListener?.onBindServiceDisConnect()
         }
     }
 
@@ -163,29 +190,39 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
     override fun onActivityResumed(p0: Activity) {
         mActivityCount = mActivityCount + 1
         mOnLifeCallBackListener?.onActivityResumed(p0)
+        //告诉主进程
         sendMessageToService(WHAT_STATE_LIFE, 2, true)
+        //告诉自己的进程
+        if (!mIsMainProcess) {
+            mOnLifeCallBackListener?.onProcessForeground(true, mProcessName, false)
+        }
     }
 
     override fun onActivityPaused(p0: Activity) {
         mOnLifeCallBackListener?.onActivityPaused(p0)
-        sendMessageToService(WHAT_STATE_LIFE, 3,  false)
+        sendMessageToService(WHAT_STATE_LIFE, 3, false)
     }
 
     override fun onActivityStopped(p0: Activity) {
         mActivityCount = mActivityCount - 1
         mOnLifeCallBackListener?.onActivityStopped(p0)
+        //告诉主进程
         sendMessageToService(WHAT_STATE_LIFE, 4, if (mActivityCount <= 0) true else false)
-
+        //告诉自己的进程
+        if (!mIsMainProcess && mActivityCount <= 0 && mOnLifeCallBackListener != null) {
+            val isForeground = isRunningForeground(mApplication!!.baseContext, mProcessName)
+            mOnLifeCallBackListener?.onProcessForeground(isForeground, mProcessName, false)
+        }
     }
 
     override fun onActivitySaveInstanceState(p0: Activity, p1: Bundle) {
         mOnLifeCallBackListener?.onActivitySaveInstanceState(p0, p1)
-        sendMessageToService(WHAT_STATE_LIFE, 5,false)
+        sendMessageToService(WHAT_STATE_LIFE, 5, false)
     }
 
     override fun onActivityDestroyed(p0: Activity) {
         mOnLifeCallBackListener?.onActivityDestroyed(p0)
-        sendMessageToService(WHAT_STATE_LIFE, 6,false)
+        sendMessageToService(WHAT_STATE_LIFE, 6, false)
     }
 
     /**
@@ -194,7 +231,7 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
      * @description 检查是否在前台
      * return true前台
      **/
-    fun isRunningForeground(context: Context,processName:String): Boolean {
+    fun isRunningForeground(context: Context, processName: String): Boolean {
         val activityManager =
             context.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val appProcesses = activityManager.runningAppProcesses ?: return false
@@ -208,5 +245,24 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
         return false
     }
 
+    /**
+     * @date 创建时间: 2022/6/22
+     * @auther gaoxiaoxiong
+     * @description 获取前台进程的名称
+     **/
+    fun getForegroundName(context: Context): String? {
+        val activityManager =
+            context.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val appProcesses = activityManager.runningAppProcesses
+        if (appProcesses == null) {
+            return null
+        } else {
+            for (appProcess in appProcesses)
+                if (appProcess.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                    return appProcess.processName
+                }
+        }
+        return null;
+    }
 
 }

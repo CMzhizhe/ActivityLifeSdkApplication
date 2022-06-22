@@ -35,8 +35,14 @@ interface OnLifeCallBackListener {
      * App是否在前台
      * @param isForeground true 是的
      * @param processName 进程名称
-     * @param lifeName 生命周期的名字
+     * @param isMainProcess 是否为主进程
      */
-    fun onAppForeground(isForeground:Boolean,processName: String,lifeName:String)
+    fun onProcessForeground(isForeground:Boolean,processName: String,isMainProcess: Boolean)
 
+    /**
+     * @date 创建时间: 2022/6/22
+     * @auther gaoxiaoxiong
+     * @description 当前APP是否在主进程，如果有一个子进程在，就算整个APP在主进程
+     **/
+    fun onAppForeground(isForeground:Boolean)
 }
