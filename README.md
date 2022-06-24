@@ -4,6 +4,12 @@
 ### 使用教程
 
 ###### 1、添加依赖
+
+根build.gradle
+```
+maven { url 'https://jitpack.io' }
+```
+app的build.gradle
 ```
   implementation 'com.github.CMzhizhe:ActivityLifeSdkApplication:1.0.0'
 ```
