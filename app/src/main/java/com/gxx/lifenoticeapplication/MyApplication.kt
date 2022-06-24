@@ -57,7 +57,7 @@ class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeLi
      * @auther gaoxiaoxiong
      * @description 绑定成功
      **/
-    override fun onBindServiceSuccess() {
+    override fun onBindLifeServiceSuccess() {
 
         Log.d(TAG,"lifeService:${ProcessUtils.getProcessName(this)},绑定成功")
     }
@@ -67,7 +67,7 @@ class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeLi
      * @auther gaoxiaoxiong
      * @description 断开连接
      **/
-    override fun onBindServiceDisConnect() {
+    override fun onBindLifeServiceDisConnect() {
         Log.d(TAG,"lifeService:${ProcessUtils.getProcessName(this)},断开连接")
     }
 

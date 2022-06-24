@@ -141,13 +141,13 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
             mServiceMessenger = Messenger(p1)
             sendMessageToService(if (mIsMainProcess) WHAT_MAIN_INIT else WHAT_STATE_LIFE, mPosition, true);
-            mOnLifeServiceLifeListener?.onBindServiceSuccess()
+            mOnLifeServiceLifeListener?.onBindLifeServiceSuccess()
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {
             Log.e(TAG, "断开链接 = " + p0?.packageName)
             mServiceMessenger = null
-            mOnLifeServiceLifeListener?.onBindServiceDisConnect()
+            mOnLifeServiceLifeListener?.onBindLifeServiceDisConnect()
         }
     }
 
