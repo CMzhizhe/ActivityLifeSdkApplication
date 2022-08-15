@@ -38,6 +38,7 @@ class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeLi
      * @param isMainProcess 是否为主进程
      */
     override fun onProcessForeground(isForeground: Boolean, processName: String,isMainProcess: Boolean) {
+        Log.e(TAG,"============================")
         Log.e(TAG,"isForeground = " + isForeground)
         Log.e(TAG,"processName = " + processName)
         Log.e(TAG,"============================")
@@ -58,7 +59,6 @@ class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeLi
      * @description 绑定成功
      **/
     override fun onBindLifeServiceSuccess() {
-
         Log.d(TAG,"lifeService:${ProcessUtils.getProcessName(this)},绑定成功")
     }
 

@@ -27,6 +27,7 @@
         <service android:name="com.gxx.activitylifelibrary.service.ActivityLifeService" android:exported="false" android:process=":tools"/>
 
         <activity android:name=".activity.mainprocess.LoginActivity"/>
+        <activity android:name=".activity.dialog.DialogActivity" android:theme="@style/dialog_style"/>
         <activity android:name=".activity.gxxprocess.RegisterActivity" android:process=":gxx"/>
         <activity android:name=".activity.gxxprocess.MainActivityV2" android:process=":gxx"/>
         <activity android:name=".activity.videoprocess.MainActivityV3" android:process=":video"/>

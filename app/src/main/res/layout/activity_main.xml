@@ -1,19 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".activity.mainprocess.MainActivity">
 
-    <TextView
-        android:id="@+id/tv_process_name"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:orientation="vertical"
+        android:layout_height="wrap_content">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/tv_process_name"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:textColor="#333333"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/view_dialog_line"
+            android:background="#E1E1E1"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"/>
+
+        <TextView
+            android:text="点击我弹出dialog"
+            android:id="@+id/tv_dialog"
+            android:gravity="center"
+            android:textColor="#333333"
+            android:textSize="16sp"
+            android:visibility="gone"
+            android:layout_gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"/>
+
+        <View
+            android:id="@+id/view_popuwindow_line"
+            android:background="#E1E1E1"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"/>
+
+        <TextView
+            android:text="点击我弹出popuwindow"
+            android:id="@+id/tv_popuwindow"
+            android:gravity="center"
+            android:textColor="#333333"
+            android:visibility="gone"
+            android:textSize="16sp"
+            android:layout_gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"/>
+
+        <View
+            android:id="@+id/view_dialog_acitivty_line"
+            android:background="#E1E1E1"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"/>
+
+        <TextView
+            android:text="点击我出dialogActivity"
+            android:id="@+id/tv_dialog_acitivty"
+            android:gravity="center"
+            android:textColor="#333333"
+            android:visibility="gone"
+            android:textSize="16sp"
+            android:layout_gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"/>
+    </LinearLayout>
+
+
+</FrameLayout>

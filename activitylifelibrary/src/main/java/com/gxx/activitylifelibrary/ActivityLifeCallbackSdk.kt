@@ -18,6 +18,7 @@ import com.gxx.activitylifelibrary.service.ActivityLifeService
 import com.gxx.activitylifelibrary.service.ActivityLifeService.Companion.BUNDLE_MODEL
 import com.gxx.activitylifelibrary.service.ActivityLifeService.Companion.WHAT_MAIN_INIT
 import com.gxx.activitylifelibrary.service.ActivityLifeService.Companion.WHAT_STATE_LIFE
+import com.gxx.activitylifelibrary.util.LogUtil
 import com.gxx.activitylifelibrary.util.ProcessUtils
 
 
@@ -28,7 +29,7 @@ import com.gxx.activitylifelibrary.util.ProcessUtils
  **/
 object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
     const val TAG = "LifeCall"
-
+    const val TAG_COUNT = "activityCount"
     private var mOnLifeCallBackListener: OnLifeCallBackListener? = null
     private var mOnLifeServiceLifeListener: OnLifeServiceLifeListener? = null;
     private var mIsMainProcess: Boolean = false//默认不是主进程
@@ -64,7 +65,7 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
         isDebug: Boolean,
         application: Application,
         onLifeCallBackListener: OnLifeCallBackListener
-    ){
+    ) {
         application.registerActivityLifecycleCallbacks(this)
         this.mIsDebug = isDebug
         this.mApplication = application
@@ -78,7 +79,7 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
      * @auther gaoxiaoxiong
      * @description 启动服务
      **/
-    fun bindService(application: Application, onLifeServiceLifeListener:OnLifeServiceLifeListener){
+    fun bindService(application: Application, onLifeServiceLifeListener: OnLifeServiceLifeListener) {
         this.mOnLifeServiceLifeListener = onLifeServiceLifeListener
         application.bindService(
             Intent(application, ActivityLifeService::class.java), serviceConnection,
@@ -117,14 +118,14 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
                         )
                         if (!isForeground) {
                             val foregroundName = getForegroundName(mApplication!!)
-                            if (foregroundName == null){
+                            if (foregroundName == null) {
                                 mOnLifeCallBackListener?.onAppForeground(false)
-                            }else {
+                            } else {
                                 val listName = foregroundName.split(":")
-                                if (listName.isEmpty()){
+                                if (listName.isEmpty()) {
                                     mOnLifeCallBackListener?.onAppForeground(false)
-                                }else{
-                                    if (listName[0].equals(mProcessName)){
+                                } else {
+                                    if (listName[0].equals(mProcessName)) {
                                         mOnLifeCallBackListener?.onAppForeground(true)
                                     }
                                 }
@@ -188,7 +189,8 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
     }
 
     override fun onActivityResumed(p0: Activity) {
-        mActivityCount = mActivityCount + 1
+        mActivityCount++
+        LogUtil.d(TAG_COUNT, "resumed-count->" + mActivityCount)
         mOnLifeCallBackListener?.onActivityResumed(p0)
         //告诉主进程
         sendMessageToService(WHAT_STATE_LIFE, 2, true)
@@ -199,12 +201,13 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
     }
 
     override fun onActivityPaused(p0: Activity) {
+        mActivityCount--
         mOnLifeCallBackListener?.onActivityPaused(p0)
         sendMessageToService(WHAT_STATE_LIFE, 3, false)
     }
 
     override fun onActivityStopped(p0: Activity) {
-        mActivityCount = mActivityCount - 1
+        LogUtil.d(TAG_COUNT, "stopped-count->" + mActivityCount)
         mOnLifeCallBackListener?.onActivityStopped(p0)
         //告诉主进程
         sendMessageToService(WHAT_STATE_LIFE, 4, if (mActivityCount <= 0) true else false)
