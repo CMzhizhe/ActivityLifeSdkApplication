@@ -3,12 +3,6 @@ package com.gxx.activitylifelibrary.service
 import android.app.Service
 import android.content.Intent
 import android.os.*
-import android.util.Log
-import com.gxx.activitylifelibrary.ActivityLifeCallbackSdk
-import com.gxx.activitylifelibrary.ActivityLifeCallbackSdk.LIST_LIFE_NAME
-import com.gxx.activitylifelibrary.ActivityLifeCallbackSdk.NAME_ON_CREATE
-import com.gxx.activitylifelibrary.ActivityLifeCallbackSdk.NAME_ON_STARTED
-import com.gxx.activitylifelibrary.ActivityLifeCallbackSdk.NAME_ON_STOPPED
 import com.gxx.activitylifelibrary.model.LifeModel
 import com.gxx.activitylifelibrary.util.LogUtil
 
@@ -17,6 +11,7 @@ class ActivityLifeService : Service() {
         const val WHAT_MAIN_NOINIT = -1//不需要初始化
         const val WHAT_MAIN_INIT = 0 //主的初始化
         const val WHAT_STATE_LIFE = 1//处理生命周期的
+        const val WHAT_LIFT_CHECK_AGAIN = 2//再次去检查生命周期
         const val BUNDLE_MODEL = "model"
     }
 
@@ -38,11 +33,11 @@ class ActivityLifeService : Service() {
     })
 
     private fun sendMessage(lifeModel: LifeModel,msg: Message){
-        if (ActivityLifeCallbackSdk.mIsDebug){
+        /*if (ActivityLifeCallbackSdk.mIsDebug){
             LogUtil.d("生命周期名称 = " + ActivityLifeCallbackSdk.LIST_LIFE_NAME[lifeModel.position])
             LogUtil.d("进程名称 = " + lifeModel.processName)
             LogUtil.d("==========================")
-        }
+        }*/
         val message = Message.obtain(null, WHAT_STATE_LIFE)
         message.data = msg.data
         try {
