@@ -7,9 +7,11 @@ import android.app.Application
 import android.app.Service
 import android.content.ComponentName
 import android.content.Context
+import android.content.Context.BIND_AUTO_CREATE
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
+import android.os.IBinder.DeathRecipient
 import android.util.Log
 import com.gxx.activitylifelibrary.inter.OnLifeCallBackListener
 import com.gxx.activitylifelibrary.inter.OnLifeServiceLifeListener
@@ -192,6 +194,7 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
         }
     }
 
+
     /**
      * 发送消息到服务器端
      * @param what WHAT_STATE_LIFE 处理生命周期
@@ -204,6 +207,12 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
             Log.d(TAG, "serviceMessenger 还未初始化")
             return
         }
+
+        if (!mServiceMessenger!!.binder.isBinderAlive){
+            Log.d(TAG,"服务端已死亡，不将发送消息")
+            return
+        }
+
         val message = Message.obtain()
         //replyTo参数包含客户端Messenger
         message.replyTo = mReceiveMessenger
