@@ -11,7 +11,7 @@ maven { url 'https://jitpack.io' }
 ```
 app的build.gradle
 ```
-  implementation 'com.github.CMzhizhe:ActivityLifeSdkApplication:1.0.2'
+  implementation 'com.github.CMzhizhe:ActivityLifeSdkApplication:1.0.3'
 ```
 
 ###### 2、配置清单文件
