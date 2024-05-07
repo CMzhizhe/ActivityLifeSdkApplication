@@ -1,5 +1,6 @@
 package com.gxx.activitylifelibrary
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo
@@ -21,6 +22,7 @@ import com.gxx.activitylifelibrary.service.ActivityLifeService.Companion.BUNDLE_
 import com.gxx.activitylifelibrary.service.ActivityLifeService.Companion.WHAT_LIFT_CHECK_AGAIN
 import com.gxx.activitylifelibrary.service.ActivityLifeService.Companion.WHAT_MAIN_INIT
 import com.gxx.activitylifelibrary.service.ActivityLifeService.Companion.WHAT_STATE_LIFE
+import com.gxx.activitylifelibrary.util.LogUtil
 import com.gxx.activitylifelibrary.util.ProcessUtils
 
 
@@ -31,7 +33,6 @@ import com.gxx.activitylifelibrary.util.ProcessUtils
  **/
 object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
     const val TAG = "LifeCall"
-    const val TAG_COUNT = "activityCount"
     private var mOnLifeCallBackListener: OnLifeCallBackListener? = null
     private var mOnLifeServiceLifeListener: OnLifeServiceLifeListener? = null;
     private var mIsMainProcess: Boolean = false//默认不是主进程
@@ -72,14 +73,14 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
         this.mIsDebug = isDebug
         this.mApplication = application
         this.mProcessName = ProcessUtils.getProcessName(application.baseContext)//当前进程名称
-        this.mIsMainProcess = mProcessName.equals(application.packageName)//当前是否为主进程
+        this.mIsMainProcess = mProcessName == application.packageName//当前是否为主进程
         this.mOnLifeCallBackListener = onLifeCallBackListener//接口回调
     }
 
     /**
      * @date 创建时间: 2022/6/22
      * @auther gaoxiaoxiong
-     * @description 启动服务
+     * @description 启动服务，用于多进程
      **/
     fun bindService(
         application: Application,
@@ -92,6 +93,8 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
         )
     }
 
+
+
     /**
      * 用于向service端发送消息的Messenger
      */
@@ -101,15 +104,15 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
      * 用于接收service发送的消息的Messenger
      */
     private val mReceiveMessenger = Messenger(object : Handler() {
+        @SuppressLint("HandlerLeak")
         override fun handleMessage(msg: Message) {
-            if (msg.what == WHAT_STATE_LIFE && mIsMainProcess && mApplication != null && msg.data != null) {
+            if(mApplication == null || msg.data == null || !mIsMainProcess){
+                return
+            }
+            if (msg.what == WHAT_STATE_LIFE) {
                 val model = msg.data.getSerializable(BUNDLE_MODEL) as LifeModel
-                if (model == null) {
-                    return
-                }
-
                 if (model.isCheckForeground) {
-                    if (LIST_LIFE_NAME[model.position].equals(NAME_ON_RESUMED)) {
+                    if (LIST_LIFE_NAME[model.position] == NAME_ON_RESUMED) {
                         mOnLifeCallBackListener?.onProcessForeground(
                             true,
                             model.processName, true
@@ -131,11 +134,8 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
                         }
                     }
                 }
-            } else if (msg.what == WHAT_LIFT_CHECK_AGAIN && mIsMainProcess && mApplication != null) {
+            } else if (msg.what == WHAT_LIFT_CHECK_AGAIN) {
                 val model = msg.data.getSerializable(BUNDLE_MODEL) as LifeModel
-                if (model == null) {
-                    return
-                }
                 if(mIsDebug){
                   Log.d(TAG, "收到再次检查的回调")
                 }
@@ -154,10 +154,19 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
      * @description
      */
     private fun checkMessengerRunningForeground(isForeground:Boolean,lifeModel: LifeModel){
+        if(mIsDebug){
+            LogUtil.d(TAG,"checkMessengerRunningForeground->是否主进程->${mIsMainProcess}")
+        }
+
         mOnLifeCallBackListener?.onProcessForeground(
             isForeground,
             lifeModel.processName, true
         )
+
+        if(mApplication == null){
+            return
+        }
+
         if (!isForeground) {
             val foregroundName = getForegroundName(mApplication!!)
             if (foregroundName == null) {
@@ -167,7 +176,7 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
                 if (listName.isEmpty()) {
                     mOnLifeCallBackListener?.onAppForeground(false)
                 } else {
-                    if (listName[0].equals(mProcessName)) {
+                    if (listName[0] == mProcessName) {
                         mOnLifeCallBackListener?.onAppForeground(true)
                     }
                 }
@@ -199,7 +208,6 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
      * 发送消息到服务器端
      * @param what WHAT_STATE_LIFE 处理生命周期
      * @param position 从LIST_LIFE_NAME取下标
-     * @param activityCount activity 个数
      */
     fun sendMessageToService(what: Int, position: Int, isCheckForeground: Boolean) {
         this.mPosition = position
@@ -241,7 +249,7 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
     override fun onActivityResumed(p0: Activity) {
         mActivityCount++
         if (mIsDebug) {
-            Log.d(TAG, "resumed-count->" + mActivityCount)
+            Log.d(TAG, "processName->${mProcessName}，resumed-activityCount->$mActivityCount")
         }
         mOnLifeCallBackListener?.onActivityResumed(p0)
         //告诉主进程
@@ -260,12 +268,12 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
 
     override fun onActivityStopped(activity: Activity) {
         if (mIsDebug) {
-            Log.d(TAG, "stopped->count->" + mActivityCount)
-            Log.d(TAG, "stopped->activityName->" + activity.javaClass.canonicalName)
+            Log.d(TAG, "processName->${mProcessName}，stopped->activityCount->$mActivityCount")
+            Log.d(TAG, "processName->${mProcessName}，stopped->activityName->${activity.javaClass.canonicalName}")
         }
         mOnLifeCallBackListener?.onActivityStopped(activity)
         //告诉主进程
-        sendMessageToService(WHAT_STATE_LIFE, 4, if (mActivityCount <= 0) true else false)
+        sendMessageToService(WHAT_STATE_LIFE, 4, mActivityCount <= 0)
         //告诉自己的进程
         if (!mIsMainProcess && mActivityCount <= 0 && mOnLifeCallBackListener != null) {
             val isForeground = isRunningForeground(mApplication!!.baseContext, mProcessName)
@@ -292,7 +300,7 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
      **/
     fun isRunningForeground(context: Context, processName: String): Boolean {
         val activityManager =
-            context.getApplicationContext()
+            context.applicationContext
                 .getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val appProcesses = activityManager.runningAppProcesses ?: return false
         for (appProcess in appProcesses) {
@@ -301,9 +309,9 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
                     if (mIsDebug) {
                         Log.d(
                             TAG,
-                            "isRunningForeground->processName->isMainPrecess->" + mIsMainProcess
+                            "isRunningForeground->processName->isMainPrecess->$mIsMainProcess"
                         )
-                        Log.d(TAG, "isRunningForeground->processName->" + processName)
+                        Log.d(TAG, "isRunningForeground->processName->$processName")
                     }
                     return true
                 }
@@ -319,7 +327,7 @@ object ActivityLifeCallbackSdk : Application.ActivityLifecycleCallbacks {
      **/
     fun getForegroundName(context: Context): String? {
         val activityManager =
-            context.getApplicationContext()
+            context.applicationContext
                 .getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val appProcesses = activityManager.runningAppProcesses
         if (appProcesses == null) {

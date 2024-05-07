@@ -33,11 +33,6 @@ class ActivityLifeService : Service() {
     })
 
     private fun sendMessage(lifeModel: LifeModel,msg: Message){
-        /*if (ActivityLifeCallbackSdk.mIsDebug){
-            LogUtil.d("生命周期名称 = " + ActivityLifeCallbackSdk.LIST_LIFE_NAME[lifeModel.position])
-            LogUtil.d("进程名称 = " + lifeModel.processName)
-            LogUtil.d("==========================")
-        }*/
         val message = Message.obtain(null, WHAT_STATE_LIFE)
         message.data = msg.data
         try {

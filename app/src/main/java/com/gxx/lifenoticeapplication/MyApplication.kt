@@ -13,7 +13,7 @@ import com.gxx.activitylifelibrary.util.ProcessUtils
 class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeListener {
     override fun onCreate() {
         super.onCreate()
-        ActivityLifeCallbackSdk.init(BuildConfig.DEBUG,this,this)
+        ActivityLifeCallbackSdk.init(true,this,this)
         ActivityLifeCallbackSdk.bindService(this,this)
     }
 
@@ -21,13 +21,22 @@ class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeLi
         super.onActivityCreated(activity, bundle)
     }
 
+    override fun onActivityStarted(activity: Activity) {
+        super.onActivityStarted(activity)
+    }
+
     override fun onActivityPaused(activity: Activity) {
         super.onActivityPaused(activity)
+    }
+
+    override fun onActivityStopped(activity: Activity) {
+        super.onActivityStopped(activity)
     }
 
     override fun onActivityDestroyed(activity: Activity) {
         super.onActivityDestroyed(activity)
     }
+
 
     /**
      * App是否在前台
@@ -39,18 +48,20 @@ class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeLi
      */
     override fun onProcessForeground(isForeground: Boolean, processName: String,isMainProcess: Boolean) {
         Log.e(TAG,"============================")
-        Log.e(TAG,"isForeground = " + isForeground)
-        Log.e(TAG,"processName = " + processName)
+        Log.e(TAG, "进程名称->processName = $processName" +
+                        "->isForeground = $isForeground，" +
+                        "是否主进程回调->${isMainProcess}，" +
+                        "回调的进程名称->${ProcessUtils.getProcessName(this)}")
         Log.e(TAG,"============================")
     }
 
     /**
      * @date 创建时间: 2022/6/22
      * @auther gaoxiaoxiong
-     * @description 当前APP是否在主进程，如果有一个子进程在，就算整个APP在主进程
+     * @description 当前APP是否在前台，如果有一个子进程在前台，就算整个APP在前台，只有主进程才能收到回调
      **/
     override fun onAppForeground(isForeground: Boolean) {
-        Log.e(TAG,"整个APP是否在前台 = " + isForeground)
+        Log.e(TAG, "整个APP是否在前台->$isForeground，当前进程名称->${ProcessUtils.getProcessName(this)}")
     }
 
     /**
@@ -59,7 +70,7 @@ class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeLi
      * @description 绑定成功
      **/
     override fun onBindLifeServiceSuccess() {
-        Log.d(TAG,"lifeService:${ProcessUtils.getProcessName(this)},绑定成功")
+        Log.d(TAG,"lifeService->${ProcessUtils.getProcessName(this)},绑定成功")
     }
 
     /**
@@ -68,7 +79,7 @@ class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeLi
      * @description 断开连接
      **/
     override fun onBindLifeServiceDisConnect() {
-        Log.d(TAG,"lifeService:${ProcessUtils.getProcessName(this)},断开连接")
+        Log.d(TAG,"lifeService->${ProcessUtils.getProcessName(this)},断开连接")
     }
 
 }

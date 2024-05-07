@@ -21,7 +21,6 @@ import static android.content.Context.ACTIVITY_SERVICE;
 /**
  * @author : gaoxiaoxiong
  * @date :2019/10/10 0010
- * @description:放一些不知道如何归类的工具类
  **/
 public class ProcessUtils {
 
@@ -130,9 +129,6 @@ public class ProcessUtils {
      * 通过ActivityManager 获取进程名，需要IPC通信
      */
     private static String getCurrentProcessNameByActivityManager(@NonNull Context context) {
-        if (context == null) {
-            return null;
-        }
         int pid = Process.myPid();
         ActivityManager am = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
         if (am != null) {
@@ -150,24 +146,6 @@ public class ProcessUtils {
 
 
 
-
-    private static String[] getStringList(String property, String separator) {
-        try {
-            Class systemPropertiesClass = Class.forName("android.os.SystemProperties");
-            Method m = systemPropertiesClass.getMethod("get", String.class);
-            String navBarOverride = (String) m.invoke(systemPropertiesClass, property);
-            return navBarOverride.isEmpty() ? new String[0] : navBarOverride.split(separator);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
 
 
 }
