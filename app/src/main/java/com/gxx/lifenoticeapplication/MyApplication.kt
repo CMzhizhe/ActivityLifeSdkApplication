@@ -14,7 +14,7 @@ class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeLi
     override fun onCreate() {
         super.onCreate()
         ActivityLifeCallbackSdk.init(true,this,this)
-        ActivityLifeCallbackSdk.bindService(this,this)
+        //ActivityLifeCallbackSdk.bindService(this,this)   //如果不调用bindService，然后你还启动所有的进程，那么都会收到onProcessForeground的调用，onAppForeground不会被调用
     }
 
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
