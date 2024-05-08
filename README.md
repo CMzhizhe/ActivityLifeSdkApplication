@@ -11,12 +11,12 @@ maven { url 'https://jitpack.io' }
 ```
 app的build.gradle
 ```
-  implementation 'com.github.CMzhizhe:ActivityLifeSdkApplication:1.0.3'
+  implementation 'com.github.CMzhizhe:ActivityLifeSdkApplication:1.0.4'
 ```
 
 ###### 2、配置清单文件
 ```
-        <!--配置service-->
+        <!--配置service  可选配置了，如果你的需求不需要多进程，就可以不用配置这个，代码也不用去调用 bindService() 方法-->
         <service android:name="com.gxx.activitylifelibrary.service.ActivityLifeService" android:exported="false" android:process=":tools"/>
 ```
 
@@ -27,7 +27,7 @@ class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeLi
         super.onCreate()
 		//初始化
         ActivityLifeCallbackSdk.init(BuildConfig.DEBUG,this,this)
-		//绑定service
+		//绑定service，可选调用方式  如果不调用bindService，然后你还启动所有的进程，那么都会收到onProcessForeground的调用，onAppForeground不会被调用
         ActivityLifeCallbackSdk.bindService(this,this)
     }
 
