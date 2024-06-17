@@ -1,6 +1,6 @@
 package com.gxx.activitylifelibrary.inter
 
-interface OnLifeServiceLifeListener {
+interface OnBindServiceLifeListener {
     /**
      * @date 创建时间: 2022/6/22
      * @auther gaoxiaoxiong

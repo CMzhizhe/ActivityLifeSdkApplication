@@ -5,16 +5,21 @@ import android.app.Application
 import android.os.Bundle
 import android.util.Log
 import com.gxx.activitylifelibrary.ActivityLifeCallbackSdk
-import com.gxx.activitylifelibrary.ActivityLifeCallbackSdk.TAG
+import com.gxx.activitylifelibrary.ActivityLifeCallbackSdk.Companion.TAG
 import com.gxx.activitylifelibrary.inter.OnLifeCallBackListener
-import com.gxx.activitylifelibrary.inter.OnLifeServiceLifeListener
+import com.gxx.activitylifelibrary.inter.OnBindServiceLifeListener
 import com.gxx.activitylifelibrary.util.ProcessUtils
 
-class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeListener {
+class MyApplication : Application(), OnLifeCallBackListener, OnBindServiceLifeListener {
     override fun onCreate() {
         super.onCreate()
-        ActivityLifeCallbackSdk.init(true,this,this)
-        //ActivityLifeCallbackSdk.bindService(this,this)   //如果不调用bindService，然后你还启动所有的进程，那么都会收到onProcessForeground的调用，onAppForeground不会被调用
+        ActivityLifeCallbackSdk.Companion.Builder()
+            .setApplication(this)
+            .setIsDebug(true)
+            .setOnLifeCallBackListener(this)
+            .setOnLifeServiceLifeListener(this)//设置该项目的作用，假如有3个进程，ABC,A是主进程，B、C是子进程，如果APP在同时启动A、B、C的情况下，A想知道我整个APP是否在前后台。如果不设置该项目，A就无法得知B、C情况
+            .build()
+            .init()
     }
 
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) {

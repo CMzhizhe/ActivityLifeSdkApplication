@@ -4,7 +4,6 @@ import android.app.Service
 import android.content.Intent
 import android.os.*
 import com.gxx.activitylifelibrary.model.LifeModel
-import com.gxx.activitylifelibrary.util.LogUtil
 
 class ActivityLifeService : Service() {
     companion object {
@@ -19,7 +18,6 @@ class ActivityLifeService : Service() {
     private val mMessenger = Messenger(object : Handler() {
         override fun handleMessage(msg: Message) {
             if (msg.data == null) {
-                LogUtil.d("msg.data为null")
                 return
             }
             val model = msg.data.getSerializable(BUNDLE_MODEL) as LifeModel
