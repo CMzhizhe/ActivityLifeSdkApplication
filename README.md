@@ -11,12 +11,12 @@ maven { url 'https://jitpack.io' }
 ```
 app的build.gradle
 ```
-  implementation 'com.github.CMzhizhe:ActivityLifeSdkApplication:1.0.4'
+  implementation 'com.github.CMzhizhe:ActivityLifeSdkApplication:1.0.5'
 ```
 
 ###### 2、配置清单文件
 ```
-        <!--配置service  可选配置了，如果你的需求不需要多进程，就可以不用配置这个，代码也不用去调用 bindService() 方法-->
+        <!--配置servic-->
         <service android:name="com.gxx.activitylifelibrary.service.ActivityLifeService" android:exported="false" android:process=":tools"/>
 ```
 
@@ -25,10 +25,13 @@ app的build.gradle
 class MyApplication : Application(), OnLifeCallBackListener, OnLifeServiceLifeListener {
     override fun onCreate() {
         super.onCreate()
-		//初始化
-        ActivityLifeCallbackSdk.init(BuildConfig.DEBUG,this,this)
-		//绑定service，可选调用方式  如果不调用bindService，然后你还启动所有的进程，那么都会收到onProcessForeground的调用，onAppForeground不会被调用
-        ActivityLifeCallbackSdk.bindService(this,this)
+	 ActivityLifeCallbackSdk.Companion.Builder()
+            .setApplication(this)
+            .setIsDebug(true)
+            .setOnLifeCallBackListener(this)
+            .setOnLifeServiceLifeListener(this)//设置该项的作用，假如有3个进程，ABC,A是主进程，B、C是子进程，如果APP在同时启动A、B、C的情况下，此时进程已经到了C了，然后A想知道我整个APP是否在前后台。如果不设置该项，A就无法得知B、C情况
+            .build()
+            .init()
     }
 
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
