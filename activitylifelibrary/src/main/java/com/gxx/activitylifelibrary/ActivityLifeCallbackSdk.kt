@@ -29,19 +29,21 @@ import java.lang.IllegalStateException
  * @auther gaoxiaoxiong
  * @description 监听前台后台配置
  **/
-class ActivityLifeCallbackSdk(
-    private var mApplication: Application,
-    private var mIsMainProcess: Boolean = false,
-    private var mProcessName: String = "") : Application.ActivityLifecycleCallbacks {
-    var mOnLifeCallBackListener: OnLifeCallBackListener? = null
-    var mOnBindServiceLifeListener: OnBindServiceLifeListener? = null
-    var mIsDebug = false
+class ActivityLifeCallbackSdk(private val builder: Builder) :
+    Application.ActivityLifecycleCallbacks {
+    private var mApplication: Application
+    private var mProcessName: String = ""
+    private var mIsMainProcess: Boolean = false
+
+    private var mOnLifeCallBackListener: OnLifeCallBackListener? = null
+    private var mOnBindServiceLifeListener: OnBindServiceLifeListener? = null
+    private var mIsDebug = false
     private var mActivityCount = 0//activity 个数
     private var mPosition = 0//当前在哪个生命周期
     private var mIsBindService = false;//是否调用了bindService
     private var mServiceMessenger: Messenger? = null;
 
-    val LIST_LIFE_NAME = mutableListOf<String>(
+    private val LIST_LIFE_NAME = mutableListOf<String>(
         NAME_ON_CREATE,
         NAME_ON_STARTED,
         NAME_ON_RESUMED,
@@ -51,7 +53,7 @@ class ActivityLifeCallbackSdk(
         NAME_ON_DESTROYED
     )
 
-    companion object{
+    companion object {
         const val TAG = "LifeCall"
         const val NAME_ON_CREATE = "onActivityCreated"
         const val NAME_ON_STARTED = "onActivityStarted"
@@ -62,54 +64,55 @@ class ActivityLifeCallbackSdk(
         const val NAME_ON_DESTROYED = "onActivityDestroyed"
 
 
-        class Builder{
-            private var isDebug = false;
-            private var processName: String = ""
-            private var application: Application? = null
-            private var onLifeCallBackListener: OnLifeCallBackListener? = null
-            private var onBindServiceLifeListener: OnBindServiceLifeListener? = null
+        class Builder {
+            var isDebug = false
+                private set
+            var application: Application? = null
+                private set
+            var onLifeCallBackListener: OnLifeCallBackListener? = null
+                private set
+            var onBindServiceLifeListener: OnBindServiceLifeListener? = null
+                private set
 
-            fun setIsDebug(isDebug: Boolean):Builder{
+            fun setIsDebug(isDebug: Boolean): Builder {
                 this.isDebug = isDebug
                 return this;
             }
 
-            fun setApplication(application: Application):Builder{
+            fun setApplication(application: Application): Builder {
                 this.application = application
                 return this;
             }
 
-            fun setOnLifeCallBackListener(onLifeCallBackListener:OnLifeCallBackListener):Builder{
+            fun setOnLifeCallBackListener(onLifeCallBackListener: OnLifeCallBackListener): Builder {
                 this.onLifeCallBackListener = onLifeCallBackListener
                 return this;
             }
 
-            fun setOnLifeServiceLifeListener(onBindServiceLifeListener:OnBindServiceLifeListener):Builder{
+            fun setOnLifeServiceLifeListener(onBindServiceLifeListener: OnBindServiceLifeListener): Builder {
                 this.onBindServiceLifeListener = onBindServiceLifeListener
                 return this;
             }
 
 
-            fun build():ActivityLifeCallbackSdk{
-                if(application == null){
+            fun build(): ActivityLifeCallbackSdk {
+                if (application == null) {
                     throw IllegalStateException("未配置 application")
                 }
-                processName = ProcessUtils.getProcessName(application!!.baseContext)
-                val activityLifeCallbackSdk = ActivityLifeCallbackSdk(application!!,processName == application!!.packageName,processName)
 
-                activityLifeCallbackSdk.mIsDebug = isDebug
-
-                if(onLifeCallBackListener!=null){
-                    activityLifeCallbackSdk.mOnLifeCallBackListener = onLifeCallBackListener
-                }
-
-                if(onBindServiceLifeListener!=null){
-                    activityLifeCallbackSdk.mOnBindServiceLifeListener = onBindServiceLifeListener
-                }
-                return activityLifeCallbackSdk;
+                return ActivityLifeCallbackSdk(this)
             }
 
         }
+    }
+
+    init {
+        mApplication = builder.application!!
+        mProcessName = ProcessUtils.getProcessName(builder.application!!)
+        mIsMainProcess = ProcessUtils.isMainProcess(builder.application!!)
+        mOnLifeCallBackListener = builder.onLifeCallBackListener
+        mOnBindServiceLifeListener = builder.onBindServiceLifeListener
+        mIsDebug = builder.isDebug
     }
 
     /**
@@ -119,7 +122,7 @@ class ActivityLifeCallbackSdk(
      */
     fun init() {
         mApplication.registerActivityLifecycleCallbacks(this)
-        if(mOnBindServiceLifeListener!=null){
+        if (mOnBindServiceLifeListener != null) {
             mIsBindService = true
             mApplication.bindService(
                 Intent(mApplication, ActivityLifeService::class.java), serviceConnection,
@@ -129,19 +132,17 @@ class ActivityLifeCallbackSdk(
     }
 
 
-
-
     /**
      * 用于接收service发送的消息的Messenger
      */
-    private val mReceiveMessenger = Messenger(object : Handler() {
+    private val mReceiveMessenger = Messenger(object : Handler(mApplication.mainLooper) {
         @SuppressLint("HandlerLeak")
         override fun handleMessage(msg: Message) {
-            if(mApplication == null || msg.data == null){
+            if (msg.data == null) {
                 return
             }
 
-            if(!mIsMainProcess){
+            if (!mIsMainProcess) {
                 return
             }
 
@@ -166,18 +167,19 @@ class ActivityLifeCallbackSdk(
                             newMessage.data = bundle
                             sendMessageDelayed(newMessage, 200)
                         } else {
-                            checkMessengerRunningForeground(false,model)
+                            checkMessengerRunningForeground(false, model)
                         }
                     }
                 }
             } else if (msg.what == WHAT_LIFT_CHECK_AGAIN) {
                 val model = msg.data.getSerializable(BUNDLE_MODEL) as LifeModel
-                if(mIsDebug){
-                  Log.d(TAG, "收到再次检查的回调")
+                if (mIsDebug) {
+                    Log.d(TAG, "收到再次检查的回调")
                 }
-                val isForeground = isRunningForeground(mApplication!!.baseContext, model.processName)
-                if(mIsDebug){
-                  Log.d(TAG, "isForeground->"+isForeground)
+                val isForeground =
+                    isRunningForeground(mApplication!!.baseContext, model.processName)
+                if (mIsDebug) {
+                    Log.d(TAG, "isForeground->" + isForeground)
                 }
                 checkMessengerRunningForeground(isForeground, model)
             }
@@ -189,7 +191,7 @@ class ActivityLifeCallbackSdk(
      * @author gaoxiaoxiong
      * @description
      */
-    private fun checkMessengerRunningForeground(isForeground:Boolean,lifeModel: LifeModel){
+    private fun checkMessengerRunningForeground(isForeground: Boolean, lifeModel: LifeModel) {
         mOnLifeCallBackListener?.onProcessForeground(
             isForeground,
             lifeModel.processName, isMainProcess = mIsMainProcess
@@ -241,20 +243,20 @@ class ActivityLifeCallbackSdk(
     fun sendMessageToService(what: Int, position: Int, isCheckForeground: Boolean) {
         this.mPosition = position
 
-        if(!mIsBindService){//未绑定service
+        if (!mIsBindService) {//未绑定service
             return
         }
 
         if (mServiceMessenger == null) {
-            if(mIsDebug){
+            if (mIsDebug) {
                 Log.d(TAG, "serviceMessenger 还未初始化")
             }
             return
         }
 
-        if (!mServiceMessenger!!.binder.isBinderAlive){
-            if (mIsDebug){
-                Log.d(TAG,"服务端已死亡，不将发送消息")
+        if (!mServiceMessenger!!.binder.isBinderAlive) {
+            if (mIsDebug) {
+                Log.d(TAG, "服务端已死亡，不将发送消息")
             }
             return
         }
@@ -272,7 +274,7 @@ class ActivityLifeCallbackSdk(
         bundle.putSerializable(BUNDLE_MODEL, model)
         message.data = bundle
         runCatching {
-            if (mServiceMessenger!=null && mServiceMessenger?.binder?.isBinderAlive == true){
+            if (mServiceMessenger != null && mServiceMessenger?.binder?.isBinderAlive == true) {
                 mServiceMessenger?.send(message)
             }
         }.onFailure {
@@ -294,15 +296,18 @@ class ActivityLifeCallbackSdk(
     override fun onActivityResumed(p0: Activity) {
         mActivityCount++
         if (mIsDebug) {
-            Log.d(TAG, "processName->${mProcessName}，resumed->activityCount->$mActivityCount，activityName->${p0.javaClass.canonicalName}")
+            Log.d(
+                TAG,
+                "processName->${mProcessName}，resumed->activityCount->$mActivityCount，activityName->${p0.javaClass.canonicalName}"
+            )
         }
         mOnLifeCallBackListener?.onActivityResumed(p0)
         sendMessageToService(WHAT_STATE_LIFE, 2, true)
-        if(mIsBindService){//告诉自己的进程
+        if (mIsBindService) {//告诉自己的进程
             if (!mIsMainProcess) {
                 mOnLifeCallBackListener?.onProcessForeground(true, mProcessName, false)
             }
-        }else{
+        } else {
             mOnLifeCallBackListener?.onProcessForeground(true, mProcessName, mIsMainProcess)
         }
     }
@@ -315,19 +320,26 @@ class ActivityLifeCallbackSdk(
 
     override fun onActivityStopped(activity: Activity) {
         if (mIsDebug) {
-            Log.d(TAG, "processName->${mProcessName}，stopped->activityCount->$mActivityCount，activityName->${activity.javaClass.canonicalName}")
+            Log.d(
+                TAG,
+                "processName->${mProcessName}，stopped->activityCount->$mActivityCount，activityName->${activity.javaClass.canonicalName}"
+            )
         }
         mOnLifeCallBackListener?.onActivityStopped(activity)
         sendMessageToService(WHAT_STATE_LIFE, 4, mActivityCount <= 0)
-        if(mIsBindService){ //告诉自己的进程
+        if (mIsBindService) { //告诉自己的进程
             if (!mIsMainProcess && mActivityCount <= 0) {
                 val isForeground = isRunningForeground(mApplication.baseContext, mProcessName)
                 mOnLifeCallBackListener?.onProcessForeground(isForeground, mProcessName, false)
             }
-        }else{
-            if(mActivityCount <= 0){
+        } else {
+            if (mActivityCount <= 0) {
                 val isForeground = isRunningForeground(mApplication.baseContext, mProcessName)
-                mOnLifeCallBackListener?.onProcessForeground(isForeground, mProcessName, mIsMainProcess)
+                mOnLifeCallBackListener?.onProcessForeground(
+                    isForeground,
+                    mProcessName,
+                    mIsMainProcess
+                )
             }
         }
 
@@ -370,7 +382,7 @@ class ActivityLifeCallbackSdk(
      * @auther gaoxiaoxiong
      * @description 获取前台进程的名称
      **/
-     fun getForegroundName(context: Context): String? {
+    fun getForegroundName(context: Context): String? {
         val activityManager =
             context.applicationContext
                 .getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager

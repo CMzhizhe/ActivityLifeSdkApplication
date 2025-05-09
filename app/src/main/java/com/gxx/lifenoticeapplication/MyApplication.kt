@@ -52,12 +52,12 @@ class MyApplication : Application(), OnLifeCallBackListener, OnBindServiceLifeLi
      * @param isMainProcess 是否为主进程
      */
     override fun onProcessForeground(isForeground: Boolean, processName: String,isMainProcess: Boolean) {
-        Log.e(TAG,"============================")
+        Log.e(TAG,"===========Start==================")
         Log.e(TAG, "进程名称->processName = $processName" +
                         "->isForeground = $isForeground，" +
                         "是否主进程回调->${isMainProcess}，" +
                         "回调的进程名称->${ProcessUtils.getProcessName(this)}")
-        Log.e(TAG,"============================")
+        Log.e(TAG,"===========End==================")
     }
 
     /**

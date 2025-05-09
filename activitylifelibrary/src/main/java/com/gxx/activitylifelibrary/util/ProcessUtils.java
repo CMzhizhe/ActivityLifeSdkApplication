@@ -24,6 +24,13 @@ import static android.content.Context.ACTIVITY_SERVICE;
  **/
 public class ProcessUtils {
 
+
+    public static boolean isMainProcess(Context context) {
+        String processName = getProcessName(context);
+        return processName != null && processName.equals(context.getPackageName());
+    }
+
+
     /**
      * 判断应用是否已经启动
      *
