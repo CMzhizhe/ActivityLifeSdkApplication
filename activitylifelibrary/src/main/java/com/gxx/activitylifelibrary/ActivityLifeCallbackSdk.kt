@@ -271,7 +271,14 @@ class ActivityLifeCallbackSdk(
         val bundle = Bundle()
         bundle.putSerializable(BUNDLE_MODEL, model)
         message.data = bundle
-        mServiceMessenger?.send(message)
+        runCatching {
+            if (mServiceMessenger!=null && mServiceMessenger?.binder?.isBinderAlive == true){
+                mServiceMessenger?.send(message)
+            }
+        }.onFailure {
+            it.printStackTrace()
+        }
+
     }
 
     override fun onActivityCreated(p0: Activity, p1: Bundle?) {
